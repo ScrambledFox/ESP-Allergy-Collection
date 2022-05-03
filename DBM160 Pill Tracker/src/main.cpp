@@ -12,20 +12,21 @@ const char *hostserver = "oocsi.id.tue.nl";
 const char *DF_Channel = "allergy_data";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
-const char* ssid = "The Donut Wifi";
+const char* ssid = "-";
 // Password of your Wifi network.
-const char* password = "donutismad";
+const char* password = "-";
 
 // OOCSI reference for the entire sketch
 OOCSI oocsi = OOCSI();
 
 //declare pins
-const int button=2;
+int boxButton=16;
+int boxButtonState = 0, boxButtonStatePrev=0;
 
 
 void setup() {
 
-  pinMode(button, INPUT_PULLUP);
+  pinMode(boxButton, INPUT_PULLUP);
 
   //begin serial
   Serial.begin(115200);
@@ -38,15 +39,35 @@ void setup() {
 
 void loop() {
 
-  if(digitalRead(button)==LOW){
+  boxButtonStatePrev=boxButtonState;
+  if (digitalRead(boxButton)==LOW)
+  boxButtonState=1;
+  else
+  boxButtonState=0;
+
+  if (boxButtonState!=boxButtonStatePrev)
+{
+  if (boxButtonState)
+  {
+    //serial feedback
+    Serial.println("box is open");
+
+    //send OOCSI message
     oocsi.newMessage(DF_Channel);
-    oocsi.addInt("Pill Dispenser", 1);
+    oocsi.addInt("Box", 1);
+    oocsi.sendMessage();
+  
+  } else
+  {
+    //serial feedback
+    Serial.println("box is closed");
+
+    //send OOCSI message
+    oocsi.newMessage(DF_Channel);
+    oocsi.addInt("Box", 0);
     oocsi.sendMessage();
 
-    Serial.println("Detected pill dispenser press");
-    delay(250);
   }
-  //Serial.println("Waiting...");
   delay(10);
 
 }
