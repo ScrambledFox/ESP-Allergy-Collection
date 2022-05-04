@@ -12,24 +12,39 @@ const char *hostserver = "oocsi.id.tue.nl";
 const char *DF_Channel = "allergy_data";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
-const char* ssid = "-";
+const char* ssid = "The Donut Wifi";
 // Password of your Wifi network.
-const char* password = "-";
+const char* password = "donutismad";
 
 // OOCSI reference for the entire sketch
 OOCSI oocsi = OOCSI();
 
 //declare pins
-int boxButton=16;
+int boxButton=GPIO_NUM_33;
 int boxButtonState = 0, boxButtonStatePrev=0;
 
 
 void setup() {
 
-  pinMode(boxButton, INPUT_PULLUP);
+  pinMode(boxButton, INPUT);
 
   //begin serial
   Serial.begin(115200);
+
+  //Run after waking up from sleep
+  Serial.println("I am awake");
+  boxButtonState=1;
+
+  //serial feedback
+  Serial.println("box is open");
+
+  //send OOCSI message
+  oocsi.newMessage(DF_Channel);
+  oocsi.addInt("Box", 1);
+  oocsi.sendMessage();
+  delay(500);
+
+
 
   //WIFI Connection
   oocsi.connect(OOCSIName, hostserver, ssid, password);
@@ -40,10 +55,10 @@ void setup() {
 void loop() {
 
   boxButtonStatePrev=boxButtonState;
-  if (digitalRead(boxButton)==LOW)
-  boxButtonState=1;
+  if (digitalRead(boxButton)==HIGH)
+  boxButtonState=1; //open
   else
-  boxButtonState=0;
+  boxButtonState=0; //close
 
   if (boxButtonState!=boxButtonStatePrev)
 {
@@ -67,7 +82,13 @@ void loop() {
     oocsi.addInt("Box", 0);
     oocsi.sendMessage();
 
+    //go to sleep
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,1);
+    Serial.println("I am going to sleep");
+    esp_deep_sleep_start();
+
   }
   delay(10);
 
+}
 }
