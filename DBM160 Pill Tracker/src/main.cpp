@@ -10,6 +10,7 @@ const char *OOCSIName = "DBM160_PillTracker";
 const char *hostserver = "oocsi.id.tue.nl";
 //name of the general oocsi channel
 const char *DF_Channel = "allergy_data";
+const char *Device_name= "d67154466116a41ad";
 
 // SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
 const char* ssid = "The Donut Wifi";
@@ -38,21 +39,23 @@ void setup() {
   //serial feedback
   Serial.println("box is open");
 
-  //send OOCSI message
-  oocsi.newMessage(DF_Channel);
-  oocsi.addInt("Box", 1);
-  oocsi.sendMessage();
-  delay(500);
-
-
-
   //WIFI Connection
   oocsi.connect(OOCSIName, hostserver, ssid, password);
   Serial.print("Successfully connected to: ");
   Serial.println(ssid);
+  delay(100);
+
+  //send OOCSI message
+  oocsi.newMessage(DF_Channel);
+  oocsi.addInt("Box", 1);
+  oocsi.addString("device_id", Device_name);
+  oocsi.sendMessage();
+  delay(500);
 }
 
 void loop() {
+
+  digitalWrite(BUILTIN_LED, HIGH);
 
   boxButtonStatePrev=boxButtonState;
   if (digitalRead(boxButton)==HIGH)
@@ -69,6 +72,7 @@ void loop() {
 
     //send OOCSI message
     oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", Device_name);
     oocsi.addInt("Box", 1);
     oocsi.sendMessage();
   
@@ -76,11 +80,14 @@ void loop() {
   {
     //serial feedback
     Serial.println("box is closed");
+    delay(300);
 
     //send OOCSI message
     oocsi.newMessage(DF_Channel);
+    oocsi.addString("device_id", Device_name);
     oocsi.addInt("Box", 0);
     oocsi.sendMessage();
+    delay(500);
 
     //go to sleep
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,1);
