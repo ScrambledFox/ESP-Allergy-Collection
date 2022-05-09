@@ -1,0 +1,153 @@
+/*********************************************************************
+   Example of the ESP connecting to WiFi and accessing items in an
+   Entity dataset on the Data Foundry.
+   This works only with an existing account, project and dataset on
+   the Data Foundry (https://data.id.tue.nl)
+ *********************************************************************/
+
+#include "DFDataset.h"
+#include "Adafruit_PM25AQI.h"
+// SSID of your Wifi network, the library currently does not support WPA2 Enterprise networks
+const char* ssid = "yourssid";
+// Password of your Wifi network.
+const char* password = "yourpassword";
+
+// put the adress of Data Foundry here
+const char* datafoundry = "data.id.tue.nl";
+
+// create connection to dataset with server address, dataset id, and the access token
+DFDataset iot(datafoundry, 2111, "d1dzOEliN2hzVTFJbXlCbC9pR2s5bi9YUUNhcU5kTk50TFdlNzNqWjZqWT0=");
+
+int currentwinState; // current state of door sensor
+int lastwinState;  
+const int win_SENSOR_PIN  = 13;
+long previousMillis = 0; 
+long interval = 180000;
+
+Adafruit_PM25AQI aqi = Adafruit_PM25AQI();
+// put your setup code here, to run once:
+void setup() {
+  Serial.begin(115200);
+  
+  while (!Serial) delay(10);
+
+  Serial.println("Adafruit PMSA003I Air Quality Sensor");
+
+  // Wait one second for sensor to boot up!
+   delay(1000);
+
+  // If using serial, initialize it and set baudrate before starting!
+  // Uncomment one of the following
+  //Serial1.begin(9600);
+  //pmSerial.begin(9600);
+
+  // There are 3 options for connectivity!
+  if (! aqi.begin_I2C()) {      // connect to the sensor over I2C
+  //if (! aqi.begin_UART(&Serial1)) { // connect to the sensor over hardware serial
+  //if (! aqi.begin_UART(&pmSerial)) { // connect to the sensor over software serial 
+    Serial.println("Could not find PM 2.5 sensor!");
+    while (1) delay(10);
+  }
+
+  Serial.println("PM25 found!");
+  // establish Wifi connection
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting to WiFi..");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.print('.');
+  }
+
+  Serial.println("Connected to the WiFi network");
+ pinMode(win_SENSOR_PIN, INPUT_PULLUP);
+ currentwinState = digitalRead(win_SENSOR_PIN);
+  // you can also already set the device and activity here,
+  // if they don't change throughout the program execution
+  //  iot.device("mydevice");
+  //  iot.activity("idle");
+}
+
+void loop() {
+lastwinState = currentwinState;              // save the last state
+  currentwinState  = digitalRead(win_SENSOR_PIN); // read new state
+  // specify device, can be empty
+  iot.device("Hub connect");
+  unsigned long currentMillis = millis();
+  // specify activity, can be empty
+  iot.activity("idle");
+  PM25_AQI_Data data;
+   if (! aqi.read(&data)) {
+    Serial.println("Could not read from AQI");
+    delay(500);  // try again in a bit!
+    return;
+   }
+  // fill in some data for the item (very similar to OOCSI)
+if(currentMillis - previousMillis > interval) {
+  iot.addInt("PM_1: ",data.pm10_standard );
+  iot.addInt("PM_2_5: ",data.pm25_standard );
+  iot.addInt("PM_10: ",data.pm100_standard );
+  iot.addInt("PMenv_10: ",data.pm10_env );
+  iot.addInt("PMenv_2_5: ",data.pm25_env );
+  iot.addInt("PMenv_10: ",data.pm100_env );
+  iot.addInt("Particles_higher_10um", data.particles_100um);
+  iot.addInt("Particles_higher_5um", data.particles_50um);
+  iot.addInt("Particles_higher_1 um", data.particles_10um);
+  iot.addInt("Particles_higher_2_5 um", data.particles_25um);
+  iot.addInt("Particles_higher_0_5 um", data.particles_05um);
+  iot.addInt("Particles_higher_0_3 um ", data.particles_03um);
+   if (lastwinState == LOW && currentwinState == HIGH) { // state change: LOW -> HIGH
+  iot.addString("window", "window opened");
+  }
+  else
+  if (lastwinState == HIGH && currentwinState == LOW) { // state change: HIGH -> LOW
+  iot.addString("window", "window Closed");
+  }
+  iot.addString("device_id:", "d0e3c3abbef0f4609");
+  iot.logItem();
+  previousMillis = currentMillis;
+  }
+ 
+
+
+
+ if (lastwinState == LOW && currentwinState == HIGH) { // state change: LOW -> HIGH
+  iot.addString("window", "window opened");
+  iot.addInt("PM_1: ",data.pm10_standard );
+  iot.addInt("PM_2_5: ",data.pm25_standard );
+  iot.addInt("PM_10: ",data.pm100_standard );
+  iot.addInt("PMenv_10: ",data.pm10_env );
+  iot.addInt("PMenv_2_5: ",data.pm25_env );
+  iot.addInt("PMenv_10: ",data.pm100_env );
+  iot.addInt("Particles_higher_10um", data.particles_100um);
+  iot.addInt("Particles_higher_5um", data.particles_50um);
+  iot.addInt("Particles_higher_1 um", data.particles_10um);
+  iot.addInt("Particles_higher_2_5 um", data.particles_25um);
+  iot.addInt("Particles_higher_0_5 um", data.particles_05um);
+  iot.addInt("Particles_higher_0_3 um ", data.particles_03um);
+  iot.addString("device_id:", "d0e3c3abbef0f4609");
+   iot.logItem();
+  }
+  else
+  if (lastwinState == HIGH && currentwinState == LOW) { // state change: HIGH -> LOW
+  iot.addString("window", "window Closed");
+  iot.addInt("PM_1: ",data.pm10_standard );
+  iot.addInt("PM_2_5: ",data.pm25_standard );
+  iot.addInt("PM_10: ",data.pm100_standard );
+  iot.addInt("PMenv_10: ",data.pm10_env );
+  iot.addInt("PMenv_2_5: ",data.pm25_env );
+  iot.addInt("PMenv_10: ",data.pm100_env );
+  iot.addInt("Particles_higher_10um", data.particles_100um);
+  iot.addInt("Particles_higher_5um", data.particles_50um);
+  iot.addInt("Particles_higher_1 um", data.particles_10um);
+  iot.addInt("Particles_higher_2_5 um", data.particles_25um);
+  iot.addInt("Particles_higher_0_5 um", data.particles_05um);
+  iot.addInt("Particles_higher_0_3 um ", data.particles_03um);
+  iot.addString("device_id:", "d0e3c3abbef0f4609");
+  iot.logItem();
+  }
+  
+  // log the item data to the dataset
+  
+
+  
+}
