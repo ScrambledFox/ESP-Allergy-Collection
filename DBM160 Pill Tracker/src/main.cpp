@@ -31,6 +31,7 @@ void setup() {
 
   //begin serial
   Serial.begin(115200);
+  delay (500);
 
   //Run after waking up from sleep
   Serial.println("I am awake");
@@ -43,7 +44,7 @@ void setup() {
   oocsi.connect(OOCSIName, hostserver, ssid, password);
   Serial.print("Successfully connected to: ");
   Serial.println(ssid);
-  delay(100);
+  delay(500);
 
   //send OOCSI message
   oocsi.newMessage(DF_Channel);
@@ -55,7 +56,7 @@ void setup() {
 
 void loop() {
 
-  digitalWrite(BUILTIN_LED, HIGH);
+  // digitalWrite(BUILTIN_LED, HIGH);
 
   boxButtonStatePrev=boxButtonState;
   if (digitalRead(boxButton)==HIGH)
@@ -80,22 +81,26 @@ void loop() {
   {
     //serial feedback
     Serial.println("box is closed");
-    delay(300);
+    delay(500);
 
     //send OOCSI message
     oocsi.newMessage(DF_Channel);
     oocsi.addString("device_id", Device_name);
     oocsi.addInt("Box", 0);
     oocsi.sendMessage();
-    delay(500);
+    // delay(2500);
+    
 
     //go to sleep
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,1);
+    delay(2500);
+
     Serial.println("I am going to sleep");
     esp_deep_sleep_start();
 
   }
-  delay(10);
+  delay(100);
+  oocsi.check();
 
 }
 }
