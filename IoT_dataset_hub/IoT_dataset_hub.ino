@@ -14,6 +14,10 @@ const char* ssid = "Royal Connection";
 const char* password = "HertogJan11!";
 
 
+#include "DHT.h"
+#define DHTPIN 2 // could need serial pin
+#define DHTTYPE DHT11
+
 // name for connecting with OOCSI (unique handle)
 const char* OOCSIName = "ESP_p25sensordendsensordata";
 // put the adress of your OOCSI server here, can be URL or IP address string
@@ -50,8 +54,8 @@ void setup() {
   // Wait one second for sensor to boot up!
   delay(1000);
 
-    
-
+   dht.begin(); // initialize the sensor
+delay(100);
   //Serial.println("Connected to the WiFi network");
   pinMode(win_SENSOR_PIN, INPUT_PULLUP);
   currentwinState = digitalRead(win_SENSOR_PIN);
@@ -72,6 +76,12 @@ unsigned long currentMillis = millis();
   // specify activity, can be empty
   bool sent = true;
   PM25_AQI_Data data;
+
+  // read humidity
+  float humi  = dht.readHumidity();
+  // read temperature as Celsius
+  float tempC = dht.readTemperature();
+  
   if (! aqi.read(&data)) {
     // Serial.println("Could not read from AQI");
     sent = false;
@@ -100,6 +110,8 @@ unsigned long currentMillis = millis();
       oocsi.addInt("Particles_higher_2_5um", data.particles_25um);
       oocsi.addInt("Particles_higher_0_5um", data.particles_05um);
       oocsi.addInt("Particles_higher_0_3um ", data.particles_03um);
+      oocsi.addInt("Temprature", tempC);
+      oocsi.addInt("Humidity",humi);
       oocsi.addString("device_id", "d0e3c3abbef0f4609");
       oocsi.sendMessage();
       lastwinState = currentwinState;              // save the last state
@@ -119,6 +131,8 @@ unsigned long currentMillis = millis();
       oocsi.addInt("Particles_higher_2_5um", data.particles_25um);
       oocsi.addInt("Particles_higher_0_5um", data.particles_05um);
       oocsi.addInt("Particles_higher_0_3um ", data.particles_03um);
+      oocsi.addInt("Temprature", tempC);
+      oocsi.addInt("Humidity",humi);
       oocsi.addString("device_id", "d0e3c3abbef0f4609");
       oocsi.sendMessage();
       lastwinState = currentwinState;              // save the last state
@@ -142,6 +156,8 @@ unsigned long currentMillis = millis();
     oocsi.addInt("Particles_higher_2_5um", data.particles_25um);
     oocsi.addInt("Particles_higher_0_5um", data.particles_05um);
     oocsi.addInt("Particles_higher_0_3um ", data.particles_03um);
+    oocsi.addInt("Temprature", tempC);
+      oocsi.addInt("Humidity",humi);
     if (currentwinState == HIGH) { // state change: LOW -> HIGH
       oocsi.addString("window", "window opened");
     }
